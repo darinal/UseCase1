@@ -8,3 +8,5 @@ app.ConfigureSwaggerEndpoint();
 app.MapAppEndpoints();
 
 app.Run();
+
+public partial class Program { }

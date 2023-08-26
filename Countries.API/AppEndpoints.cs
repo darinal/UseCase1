@@ -2,7 +2,6 @@
 using Countries.BLL.Services.Interfaces;
 using Countries.API.Extensions;
 using System.Text.Json;
-using System;
 using Countries.API.Models;
 
 namespace Countries.API;
@@ -77,7 +76,7 @@ public static class AppEndpoints
 
     private static string PrettifyResponse((ICollection<Country> Countries, int TotalCount) result, Pagination pagination)
     {
-        JsonSerializerOptions jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        JsonSerializerOptions jsonOptions = new JsonSerializerOptions { WriteIndented = true, PropertyNameCaseInsensitive = true };
 
         CountryResponse response = new(
             result.Countries,
