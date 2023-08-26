@@ -4,11 +4,12 @@ public record Country
 {
     const string UndefinedValue = "Undefined";
 
-    public Country(string? name, string? capital, string? region, float? area)
+    public Country(string? name, string? capital, string? region, int? population, double? area)
     {
         Name = name ?? UndefinedValue;
         Capital = capital ?? UndefinedValue;
         Region = region ?? UndefinedValue;
+        Population = population ?? 0;
         Area = area ?? 0;
     }
 
@@ -18,5 +19,7 @@ public record Country
 
     public string Region { get; set; }
 
-    public float Area { get; set; }
+    public int Population { get; set; }
+
+    public double Area { get; set; }
 }

@@ -8,7 +8,7 @@ public record CountryResponseModel
 
     public string? Region { get; set; }
 
-    public float? Area { get; set; }
+    public double? Area { get; set; }
 
     public int? Population { get; set; }
 }

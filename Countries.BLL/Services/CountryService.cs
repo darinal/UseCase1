@@ -15,7 +15,7 @@ namespace Countries.BLL.Services
             _externalApiService = externalApiService;
         }
 
-        public async Task<ICollection<Country>> GetCountriesAsync(CountriesFilters filters)
+        public async Task<ICollection<Country>> GetCountriesAsync(CountriesFilters filters, Sorting sorting)
         {
             ICollection<CountryResponseModel> countriesResponseData =
                 await _externalApiService.ReadApiDataAsync(filters.CountryName);
@@ -23,20 +23,25 @@ namespace Countries.BLL.Services
             ICollection<CountryResponseModel> filteredCountries = _responseProcessor
                 .Filter(countriesResponseData, filters);
 
-            return Remap(filteredCountries);
+            return RemapAndSort(filteredCountries, sorting);
         }
 
-        private static ICollection<Country> Remap(ICollection<CountryResponseModel>? countriesResponseData)
+        private static ICollection<Country> RemapAndSort(
+            ICollection<CountryResponseModel>? countriesResponseData,
+            Sorting sorting)
         {
             if (countriesResponseData is null || countriesResponseData.Count == 0)
             {
                 return new List<Country>();
             }
 
-            return countriesResponseData
+            IEnumerable<Country> remappedList = countriesResponseData
                 .Select(x =>
-                    new Country(x.Name?.Official, x.Capital?.FirstOrDefault(), x.Region, x.Area))
-                .ToList();
+                    new Country(x.Name?.Common, x.Capital?.FirstOrDefault(), x.Region, x.Population, x.Area));
+
+            return sorting == Sorting.Ascend
+                ? remappedList.OrderBy(x => x.Name).ToList()
+                : remappedList.OrderByDescending(x => x.Name).ToList();
         }
     }
 }

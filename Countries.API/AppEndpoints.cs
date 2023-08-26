@@ -2,6 +2,7 @@
 using Countries.BLL.Services.Interfaces;
 using Countries.API.Extensions;
 using System.Text.Json;
+using System;
 
 namespace Countries.API;
 
@@ -13,9 +14,12 @@ public static class AppEndpoints
         {
             try
             {
-                CountriesFilters countryName = DefineFilters(httpContext.Request.Query);
+                IQueryCollection queryParams = httpContext.Request.Query;
 
-                ICollection<Country> countries = await countryService.GetCountriesAsync(countryName);
+                CountriesFilters countryName = DefineFilters(queryParams);
+                Sorting sorting = DefineSorting(queryParams);
+
+                ICollection<Country> countries = await countryService.GetCountriesAsync(countryName, sorting);
 
                 string prettifyResponse = PrettifyResponse(countries);
                 httpContext.Response.ContentType = "application/json";
@@ -39,6 +43,18 @@ public static class AppEndpoints
         CountriesFilters filter = new CountriesFilters(countryName, population);
 
         return filter;
+    }
+
+    private static Sorting DefineSorting(IQueryCollection queryParams)
+    {
+        string? sortValue = queryParams.GetString("sort");
+
+        if (Enum.TryParse(sortValue, ignoreCase: true, out Sorting parsedSort))
+        {
+            return parsedSort;
+        }
+
+        return Sorting.Ascend;
     }
 
     private static string PrettifyResponse(ICollection<Country> countries)
