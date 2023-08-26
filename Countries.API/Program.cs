@@ -1,24 +1,30 @@
+using Countries.API;
+using Countries.BLL.Configurations;
+using Countries.BLL.Services;
 using Microsoft.OpenApi.Models;
 
-var builder = WebApplication.CreateBuilder(args);
-var services = builder.Services;
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Add Swagger services
+ConfigurationManager configuration = builder.Configuration;
+
+configuration.AddJsonFile("appsettings.json");
+configuration.GetSection("ExternalApiSettings").Get<ExternalApiSettings>();
+
+IServiceCollection services = builder.Services;
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Countries.API", Version = "v1" });
 });
 
-var app = builder.Build();
+services.Configure<ExternalApiSettings>(configuration.GetSection("ExternalApiSettings"));
+services.AddHttpClient();
+services.AddScoped<ICountryService, CountryService>();
 
-// Inside the Configure method
+WebApplication app = builder.Build();
+
 app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-  c.SwaggerEndpoint("/swagger/v1/swagger.json", "Countries.API v1");
-});
-
-app.MapGet("/", () => "Hello World!");
+app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "Countries.API v1"); });
+app.MapEndpoints();
 
 app.Run();
