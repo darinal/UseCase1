@@ -8,40 +8,40 @@ namespace Countries.BLL.Services
     {
         private readonly IExternalApiService _externalApiService;
 
-        private readonly ResponseProcessor _responseProcessor = new();
-
         public CountryService(IExternalApiService externalApiService)
         {
             _externalApiService = externalApiService;
         }
 
-        public async Task<ICollection<Country>> GetCountriesAsync(CountriesFilters filters, Sorting sorting)
+        public async Task<(ICollection<Country> Countries, int TotalCount)> GetCountriesAsync(
+            CountriesFilters filters,
+            Sorting sorting,
+            Pagination pagination)
         {
             ICollection<CountryResponseModel> countriesResponseData =
                 await _externalApiService.ReadApiDataAsync(filters.CountryName);
 
-            ICollection<CountryResponseModel> filteredCountries = _responseProcessor
-                .Filter(countriesResponseData, filters);
+            ICollection<Country> countries = Remap(countriesResponseData);
 
-            return RemapAndSort(filteredCountries, sorting);
+            CountryDataProcessor dataProcessor = new CountryDataProcessor(countries)
+                .Filter(filters)
+                .Sort(sorting)
+                .Trim(pagination);
+
+            return (dataProcessor.GetResult(), dataProcessor.GetTotalCount());
         }
 
-        private static ICollection<Country> RemapAndSort(
-            ICollection<CountryResponseModel>? countriesResponseData,
-            Sorting sorting)
+        private static ICollection<Country> Remap(ICollection<CountryResponseModel>? countriesResponseData)
         {
             if (countriesResponseData is null || countriesResponseData.Count == 0)
             {
                 return new List<Country>();
             }
 
-            IEnumerable<Country> remappedList = countriesResponseData
+            return countriesResponseData
                 .Select(x =>
-                    new Country(x.Name?.Common, x.Capital?.FirstOrDefault(), x.Region, x.Population, x.Area));
-
-            return sorting == Sorting.Ascend
-                ? remappedList.OrderBy(x => x.Name).ToList()
-                : remappedList.OrderByDescending(x => x.Name).ToList();
+                    new Country(x.Name?.Common, x.Capital?.FirstOrDefault(), x.Region, x.Population, x.Area))
+                .ToList();
         }
     }
 }

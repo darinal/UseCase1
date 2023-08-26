@@ -3,6 +3,7 @@ using Countries.BLL.Services.Interfaces;
 using Countries.API.Extensions;
 using System.Text.Json;
 using System;
+using Countries.API.Models;
 
 namespace Countries.API;
 
@@ -18,10 +19,12 @@ public static class AppEndpoints
 
                 CountriesFilters countryName = DefineFilters(queryParams);
                 Sorting sorting = DefineSorting(queryParams);
+                Pagination pagination = DefinePagination(queryParams);
 
-                ICollection<Country> countries = await countryService.GetCountriesAsync(countryName, sorting);
+                (ICollection<Country> Countries, int TotalCount) result =
+                    await countryService.GetCountriesAsync(countryName, sorting, pagination);
 
-                string prettifyResponse = PrettifyResponse(countries);
+                string prettifyResponse = PrettifyResponse(result, pagination);
                 httpContext.Response.ContentType = "application/json";
 
                 await httpContext.Response.WriteAsync(prettifyResponse);
@@ -57,10 +60,32 @@ public static class AppEndpoints
         return Sorting.Ascend;
     }
 
-    private static string PrettifyResponse(ICollection<Country> countries)
+    private static Pagination DefinePagination(IQueryCollection queryParams)
+    {
+        int page = GetParameter("page", 1);
+        int pageSize = GetParameter("pageSize", 10);
+        
+        return new Pagination(page, pageSize);
+
+        int GetParameter(string paramName, int defaultValue)
+        {
+            int? value = queryParams.GetInt(paramName);
+
+            return value is null or < 0 ? defaultValue : value.Value;
+        }
+    }
+
+    private static string PrettifyResponse((ICollection<Country> Countries, int TotalCount) result, Pagination pagination)
     {
         JsonSerializerOptions jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-        string json = JsonSerializer.Serialize(new { countries.Count, Countries = countries }, jsonOptions);
+
+        CountryResponse response = new(
+            result.Countries,
+            result.TotalCount,
+            pagination.Page,
+            pagination.PageSize);
+
+        string json = JsonSerializer.Serialize(response, jsonOptions);
 
         return json;
     }
