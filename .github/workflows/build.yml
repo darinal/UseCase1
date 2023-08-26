@@ -13,25 +13,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v2
         with:
-          dotnet-version: '6.0.x' # Use the appropriate version
+          dotnet-version: '6.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Build and Test
+      - name: Build
         run: dotnet build --configuration Release
+
+      - name: Test
+        run: dotnet tool install --global dotnet-coverage
 
       - name: Build and analyze
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           dotnet tool install --global dotnet-sonarscanner
-          dotnet sonarscanner begin /k:"darinal_UseCase1" /o:"daryna" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io"
+          dotnet sonarscanner begin /k:"darinal_UseCase1" /o:"daryna" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
           dotnet build --configuration Release
+          dotnet-coverage collect "dotnet test" -f xml -o "coverage.xml"
           dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"

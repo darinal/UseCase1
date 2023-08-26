@@ -1,0 +1,291 @@
+Me
+Fill in Readme.md with 
+	Information on how to run .net web api application locally.
+create examples how to run this endpoint
+using Countries.BLL.Models;
+using Countries.BLL.Services.Interfaces;
+using Countries.API.Extensions;
+using System.Text.Json;
+using System;
+using Countries.API.Models;
+
+namespace Countries.API;
+
+public static class AppEndpoints
+{
+  public static void MapAppEndpoints(this WebApplication app)
+  {
+    app.MapGet("/countries", async (ICountryService countryService, HttpContext httpContext) =>
+    {
+      try
+      {
+        IQueryCollection queryParams = httpContext.Request.Query;
+
+        CountriesFilters countryName = DefineFilters(queryParams);
+        Sorting sorting = DefineSorting(queryParams);
+        Pagination pagination = DefinePagination(queryParams);
+
+        (ICollection<Country> Countries, int TotalCount) result =
+                await countryService.GetCountriesAsync(countryName, sorting, pagination);
+
+        string prettifyResponse = PrettifyResponse(result, pagination);
+        httpContext.Response.ContentType = "application/json";
+
+        await httpContext.Response.WriteAsync(prettifyResponse);
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+        httpContext.Response.ContentType = "text/plain";
+        await httpContext.Response.WriteAsync("Not now, sorry");
+      }
+    });
+  }
+
+  private static CountriesFilters DefineFilters(IQueryCollection queryCollection)
+  {
+    string? countryName = queryCollection.GetString("name");
+    int? population = queryCollection.GetInt("population");
+
+    CountriesFilters filter = new CountriesFilters(countryName, population);
+
+    return filter;
+  }
+
+  private static Sorting DefineSorting(IQueryCollection queryParams)
+  {
+    string? sortValue = queryParams.GetString("sort");
+
+    if (Enum.TryParse(sortValue, ignoreCase: true, out Sorting parsedSort))
+    {
+      return parsedSort;
+    }
+
+    return Sorting.Ascend;
+  }
+
+  private static Pagination DefinePagination(IQueryCollection queryParams)
+  {
+    int page = GetParameter("page", 1);
+    int pageSize = GetParameter("pageSize", 10);
+
+    return new Pagination(page, pageSize);
+
+    int GetParameter(string paramName, int defaultValue)
+    {
+      int? value = queryParams.GetInt(paramName);
+
+      return value is null or < 0 ? defaultValue : value.Value;
+    }
+  }
+
+  private static string PrettifyResponse((ICollection<Country> Countries, int TotalCount) result, Pagination pagination)
+  {
+    JsonSerializerOptions jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
+    CountryResponse response = new(
+        result.Countries,
+        result.TotalCount,
+        pagination.Page,
+        pagination.PageSize);
+
+    string json = JsonSerializer.Serialize(response, jsonOptions);
+
+    return json;
+  }
+}
+
+ChatGPT
+Sure, here's a filled-in `Readme.md` with information on how to run the .NET Web API application locally and examples of how to use the provided endpoint:
+
+```markdown
+# .NET Web API Application
+
+This repository contains a.NET Web API application that provides an endpoint to retrieve a list of countries with optional filtering, sorting, and pagination.
+
+## How to Run Locally
+
+To run the .NET Web API application locally, follow these steps:
+
+1. **Prerequisites**: Make sure you have the following installed on your machine:
+   - [.NET SDK] (https://dotnet.microsoft.com/download/dotnet) (version 5.0 or later)
+
+2. **Clone the Repository**: Clone this repository to your local machine.
+
+3. **Navigate to the Project Directory**: Open a terminal and navigate to the directory containing the `Readme.md` file.
+
+4. **Build and Run the Application**: Run the following commands:
+   ```
+   dotnet build
+   dotnet run --project Countries.API
+   ```
+
+5. **Access the API Endpoint**: Once the application is running, you can access the API endpoint using a web browser or a tool like[curl](https://curl.se/) or [Postman](https://www.postman.com/). The endpoint URL will be `http://localhost:5000/countries`.
+
+## API Endpoint Example
+
+### Retrieve Countries
+
+- ** Endpoint**: `/countries`
+- ** Method**: GET
+
+#### Query Parameters
+
+- `name` (optional): Filter countries by name.
+- `population` (optional): Filter countries by population.
+- `sort` (optional): Specify sorting order (`Ascend` or `Descend`).
+
+#### Pagination
+
+- `page` (optional): Page number(default: 1).
+- `pageSize` (optional): Number of items per page(default: 10).
+
+** Example Request**:
+
+```http
+GET http://localhost:5000/countries?name=United&population=100000000&sort=Descend&page=2&pageSize=5
+```
+
+** Example Response**:
+
+```json
+{
+  "countries": [
+    {
+      "name": "United States",
+      "population": 331002651,
+      // Other country fields...
+    },
+    // Additional countries...
+  ],
+  "totalCount": 10,
+  "currentPage": 2,
+  "pageSize": 5
+}
+```
+
+## Code Explanation
+
+The `AppEndpoints` class defines an endpoint to retrieve a list of countries with optional filters, sorting, and pagination. The query parameters are used to customize the query. The response is serialized using JSON.
+
+For more details, please refer to the provided code in the `AppEndpoints` class.
+
+---
+**Note * *: This README assumes that the code provided is part of a larger project and can be integrated accordingly. Adjustments may be needed based on your project structure and requirements.
+```
+
+Please note that this README assumes a basic project structure and setup. You might need to adjust the instructions based on your project's specifics and any additional configuration required.
+
+Me
+write more examples like this
+GET http://localhost:5000/countries?name=United&population=10&sort=Descend&page=2&pageSize=5
+
+ChatGPT
+Certainly! Here are a few more examples of API requests you can make to the endpoint:
+
+1. * *Retrieve All Countries with Default Pagination**:
+
+   Request:
+   ```
+   GET http://localhost:5000/countries
+   ```
+
+   Response:
+   ```json
+   {
+     "countries": [
+       {
+         "name": "United States",
+         "population": 331002651,
+         // Other country fields...
+       },
+       // Additional countries...
+     ],
+     "totalCount": 195,
+     "currentPage": 1,
+     "pageSize": 10
+   }
+   ```
+
+2. * *Filter by Name and Pagination**:
+
+   Request:
+   ```
+   GET http://localhost:5000/countries?name=Germany&page=3&pageSize=8
+   ```
+
+   Response:
+   ```json
+   {
+     "countries": [
+       {
+         "name": "Germany",
+         "population": 83783942,
+         // Other country fields...
+       },
+       // Additional countries...
+     ],
+     "totalCount": 1,
+     "currentPage": 3,
+     "pageSize": 8
+   }
+   ```
+
+3. * *Filter by Population and Sorting**:
+
+   Request:
+   ```
+   GET http://localhost:5000/countries?population=100000000&sort=Descend
+   ```
+
+   Response:
+   ```json
+   {
+     "countries": [
+       {
+         "name": "United States",
+         "population": 331002651,
+         // Other country fields...
+       },
+       {
+  "name": "Brazil",
+         "population": 212559417,
+         // Other country fields...
+       },
+       // Additional countries...
+     ],
+     "totalCount": 7,
+     "currentPage": 1,
+     "pageSize": 10
+   }
+   ```
+
+4. * *Invalid Parameters Handling**:
+
+   Request:
+   ```
+   GET http://localhost:5000/countries?sort=InvalidSortValue&page=-2&pageSize=0
+   ```
+
+   Response:
+   ```json
+   {
+     "message": "Invalid parameters were provided for sorting or pagination."
+   }
+   ```
+
+5. * *Error Handling * *:
+
+   If an internal error occurs while processing the request, the response might look like:
+
+   Request:
+   ```
+   GET http://localhost:5000/countries
+   ```
+
+   Response:
+   ```
+   Internal Server Error
+   ```
+
+Remember that the actual behavior and responses might depend on your implementation and any custom error handling you have in place.

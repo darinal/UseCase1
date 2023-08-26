@@ -32,7 +32,7 @@ public static class AppEndpoints
             {
                 Console.WriteLine(e);
                 httpContext.Response.ContentType = "text/plain";
-                await httpContext.Response.WriteAsync("Not now, sorry");
+                await httpContext.Response.WriteAsync("Don't go there");
             }
         });
     }
@@ -40,7 +40,7 @@ public static class AppEndpoints
     private static CountriesFilters DefineFilters(IQueryCollection queryCollection)
     {
         string? countryName = queryCollection.GetString("name");
-        int? population = queryCollection.GetInt("population");
+        int? population = queryCollection.GetPositiveInt("population");
 
         CountriesFilters filter = new CountriesFilters(countryName, population);
 
@@ -68,9 +68,9 @@ public static class AppEndpoints
 
         int GetParameter(string paramName, int defaultValue)
         {
-            int? value = queryParams.GetInt(paramName);
+            int? value = queryParams.GetPositiveInt(paramName);
 
-            return value is null or < 0 ? defaultValue : value.Value;
+            return value is null or <= 0 ? defaultValue : value.Value;
         }
     }
 

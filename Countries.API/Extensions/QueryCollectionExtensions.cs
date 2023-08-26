@@ -2,11 +2,11 @@
 
 public static class QueryCollectionExtensions
 {
-    public static int? GetInt(this IQueryCollection queryCollection, string key)
+    public static int? GetPositiveInt(this IQueryCollection queryCollection, string key)
     {
         if (int.TryParse(queryCollection[key], out int parsedValue))
         {
-            return parsedValue;
+            return parsedValue > 0 ? parsedValue : null;
         }
 
         return null;

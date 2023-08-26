@@ -1,4 +1,5 @@
-﻿using Countries.BLL.Models;
+﻿using Countries.BLL.Exceptions;
+using Countries.BLL.Models;
 
 namespace Countries.BLL.Services;
 
@@ -55,6 +56,12 @@ public class CountryDataProcessor
         }
 
         int startIndex = (pagination.Page - 1) * pagination.PageSize;
+
+        if (startIndex >= _totalCountryCount)
+        {
+            throw new StepOverOffsetException();
+        }
+
         int endIndex = startIndex + pagination.PageSize;
 
         if (startIndex < 0)
