@@ -1,6 +1,6 @@
 ﻿namespace Countries.BLL.ApiModels;
 
-public class CountryResponseModel
+public record CountryResponseModel
 {
     public CountryNameResponseModel? Name { get; set; }
 
@@ -9,4 +9,6 @@ public class CountryResponseModel
     public string? Region { get; set; }
 
     public float? Area { get; set; }
+
+    public int? Population { get; set; }
 }

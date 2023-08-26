@@ -1,6 +1,6 @@
 ﻿namespace Countries.BLL.ApiModels;
 
-public class CountryNameResponseModel
+public record CountryNameResponseModel
 {
     public string? Official { get; set; }
 

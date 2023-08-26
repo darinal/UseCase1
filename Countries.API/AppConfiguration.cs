@@ -1,5 +1,6 @@
 using Countries.BLL.Configurations;
 using Countries.BLL.Services;
+using Countries.BLL.Services.Interfaces;
 using Microsoft.OpenApi.Models;
 
 namespace Countries.API;
@@ -23,6 +24,7 @@ public static class AppConfiguration
         services.Configure<ExternalApiSettings>(GetApiSettings(webApplicationBuilder.Configuration));
         services.AddHttpClient();
         services.AddScoped<ICountryService, CountryService>();
+        services.AddScoped<IExternalApiService, ExternalApiService>();
     }
 
     public static void ConfigureSwaggerEndpoint(this WebApplication app)

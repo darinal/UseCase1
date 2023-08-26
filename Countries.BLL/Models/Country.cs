@@ -1,6 +1,6 @@
 ﻿namespace Countries.BLL.Models;
 
-public class Country
+public record Country
 {
     const string UndefinedValue = "Undefined";
 
