@@ -4,5 +4,5 @@ namespace Countries.BLL.Services;
 
 public interface ICountryService
 {
-    Task<ICollection<Country>> GetCountriesAsync();
+    Task<ICollection<Country>> GetCountriesAsync(string countryName);
 }

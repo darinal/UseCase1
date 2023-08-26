@@ -1,0 +1,102 @@
+Me
+For endpoint
+ app.MapGet("/countries", async (ICountryService countryService) =>
+        {
+                ICollection<Country> countries = await countryService.GetCountriesAsync();
+                return Results.Ok(countries); 
+        });
+
+add ability to receive query parameter name which is case insensitive
+
+ChatGPT
+To add the ability to receive a case-insensitive query parameter `name` to your endpoint in ASP.NET Core, you can modify your code like this:
+
+```csharp
+app.MapGet("/countries", async (ICountryService countryService, HttpContext httpContext) =>
+{
+    // Get the query parameter value
+    string queryName = httpContext.Request.Query["name"].ToString();
+
+    ICollection<Country> countries = await countryService.GetCountriesAsync();
+
+    // Filter countries based on the query parameter value (case-insensitive)
+    if (!string.IsNullOrWhiteSpace(queryName))
+    {
+        countries = countries.Where(c => c.Name.Equals(queryName, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    return Results.Ok(countries);
+});
+```
+
+In this code, we're using the `httpContext` parameter to access the incoming request's query parameters. We retrieve the value of the `name` parameter, and then we filter the list of countries based on this value, ensuring a case-insensitive comparison by using `StringComparison.OrdinalIgnoreCase`.
+
+Remember to import the necessary namespaces at the top of your file:
+
+```csharp
+using Microsoft.AspNetCore.Http;
+using System.Linq;
+```
+
+With these changes, your endpoint will now accept a case-insensitive query parameter `name` and return the filtered list of countries based on that parameter's value.
+
+Me
+Update the following code block to use the endpoint https://restcountries.com/v3.1/name/{name} countryName is defined or use /all endpoint when country name is null or empty and pass as the parameter to 
+in next code
+ private async Task<ICollection<CountryResponseModel>?> ReadApiDataAsync()
+        {
+            string apiUrl ="https://restcountries.com/v3.1/all"
+
+            HttpResponseMessage response = await _httpClient.GetAsync(apiUrl);
+            response.EnsureSuccessStatusCode();
+
+            string content = await response.Content.ReadAsStringAsync();
+            List<CountryResponseModel>? countriesData = JsonConvert.DeserializeObject<List<CountryResponseModel>>(content);
+
+            return countriesData;
+        }
+
+Sure, I'll help you update the code to use the specified endpoint and handle the country name parameter. Please note that the URL format and API endpoints are subject to change based on the actual API you are using. Below is the updated code:
+
+```csharp
+private async Task<ICollection<CountryResponseModel>?> ReadApiDataAsync(string countryName)
+{
+    string apiUrl;
+
+    if (string.IsNullOrWhiteSpace(countryName))
+    {
+        apiUrl = "https://restcountries.com/v3.1/all";
+    }
+    else
+    {
+        apiUrl = $"https://restcountries.com/v3.1/name/{Uri.EscapeDataString(countryName)}";
+    }
+
+    HttpResponseMessage response = await _httpClient.GetAsync(apiUrl);
+    response.EnsureSuccessStatusCode();
+
+    string content = await response.Content.ReadAsStringAsync();
+    List<CountryResponseModel>? countriesData;
+
+    if (string.IsNullOrWhiteSpace(countryName))
+    {
+        countriesData = JsonConvert.DeserializeObject<List<CountryResponseModel>>(content);
+    }
+    else
+    {
+        // The API returns a dictionary where keys are country names and values are country data.
+        Dictionary<string, List<CountryResponseModel>> countryDataDictionary = 
+            JsonConvert.DeserializeObject<Dictionary<string, List<CountryResponseModel>>>(content);
+
+        countriesData = countryDataDictionary.Values.FirstOrDefault();
+    }
+
+    return countriesData;
+}
+```
+
+In this code, we've updated the `ReadApiDataAsync` method to accept a `countryName` parameter. Depending on whether the `countryName` is provided or not, we construct the appropriate API URL. If a `countryName` is given, we use the `/name/{name}` endpoint with the specified country name parameter. Otherwise, we use the `/all` endpoint to get all countries' data.
+
+Additionally, since the API's response structure seems to differ based on whether a single country's data or all countries' data is retrieved, we've adjusted the deserialization process accordingly. When fetching data for all countries, we deserialize it as a list of `CountryResponseModel`, and when fetching data for a specific country, we deserialize it as a dictionary and extract the value using `.Values.FirstOrDefault()`.
+
+Remember to adjust the deserialization logic based on the actual structure of the API response.
